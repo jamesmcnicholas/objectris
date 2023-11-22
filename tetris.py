@@ -1,4 +1,5 @@
 import pygame
+import pygame.freetype
 import json
 import random
 from random import randint
@@ -6,7 +7,6 @@ from random import randint
 frame_counter = 0
 speed = 60
 tetromino_colour = ""
-
 height = 40
 width = 40
 margin = 5
@@ -26,7 +26,8 @@ for row in range (20):
         board[row].append(0)
 
 pygame.init()
-
+pygame.freetype.init()
+GAME_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 80)
  
 # Set the width and height of the screen [width, height]
 size = (screen_width, screen_height)
@@ -40,6 +41,33 @@ done = False
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
  
+# --- background ---
+#create the locations of the stars for when we animate the background
+star_field_slow = []
+star_field_medium = []
+star_field_fast = []
+
+for slow_stars in range(50): #birth those plasma balls, baby
+    star_loc_x = random.randrange(0, screen_width)
+    star_loc_y = random.randrange(0, screen_height)
+    star_field_slow.append([star_loc_x, star_loc_y]) #i love your balls
+
+for medium_stars in range(35):
+    star_loc_x = random.randrange(0, screen_width)
+    star_loc_y = random.randrange(0, screen_height)
+    star_field_medium.append([star_loc_x, star_loc_y])
+
+for fast_stars in range(15):
+    star_loc_x = random.randrange(0, screen_width)
+    star_loc_y = random.randrange(0, screen_height)
+    star_field_fast.append([star_loc_x, star_loc_y])
+
+#define some star colours
+LIGHTGREY = (192, 192, 192)
+DARKGREY = (128, 128, 128)
+YELLOW = (224, 224, 224)
+                                 
+
 
 # --- helper methods ---
 def generate_bag():
@@ -93,38 +121,69 @@ def spawn_tetromino():
         active_position[i].append(tetromino[i][1])
         active_position[i].append(tetromino[i][0]+3)
 
+def check_left():
+    for i in range(4):
+        if active_position[i][1] - 1 < 0:
+            return False
+
+def check_right():
+    for i in range(4):
+        if active_position[i][1] + 1 > 9:
+            return False
+
+def check_down():
+    for i in range(4):
+        if active_position[i][0] + 1 > 19:
+            return False
+
 def move_left():
     global board
-    board = [[0 for x in range(10)] for y in range(20)]
-    for i in range(4):
-        active_position[i][1] = active_position[i][1] - 1
-    for cell in active_position:
-        board[cell[0]][cell[1]] = tetromino_colour
+    if check_left() == False:
+        return
+    else:
+        board = [[0 for x in range(10)] for y in range(20)]
+        for i in range(4):
+            active_position[i][1] = active_position[i][1] - 1
+        for cell in active_position:
+            board[cell[0]][cell[1]] = tetromino_colour
+        print(active_position)
     
 def move_right():
     global board
-    board = [[0 for x in range(10)] for y in range(20)]
-    for i in range(4):
-        active_position[i][1] = active_position[i][1] + 1
-    for cell in active_position:
-        board[cell[0]][cell[1]] = tetromino_colour
+    if check_right() == False:
+        return
+    else:
+        board = [[0 for x in range(10)] for y in range(20)]
+        for i in range(4):
+            active_position[i][1] = active_position[i][1] + 1
+        for cell in active_position:
+            board[cell[0]][cell[1]] = tetromino_colour
+    
 
 def move_down():
     global board
-    board = [[0 for x in range(10)] for y in range(20)]
-    for i in range(4):
-        active_position[i][0] = active_position[i][0] + 1
-    for cell in active_position:
-        board[cell[0]][cell[1]] = tetromino_colour
+    if check_down() == False:
+        return
+    else:
+        board = [[0 for x in range(10)] for y in range(20)]
+        for i in range(4):
+            active_position[i][0] = active_position[i][0] + 1
+        for cell in active_position:
+            board[cell[0]][cell[1]] = tetromino_colour
+    print(active_position)
 
 
 def fall():
     global board
-    board = [[0 for x in range(10)] for y in range(20)]
-    for i in range(4):
-        active_position[i][0] = active_position[i][0] + 1
-    for cell in active_position:
-        board[cell[0]][cell[1]] = tetromino_colour
+    global board
+    if check_down() == False:
+        return
+    else:
+        board = [[0 for x in range(10)] for y in range(20)]
+        for i in range(4):
+            active_position[i][0] = active_position[i][0] + 1
+        for cell in active_position:
+            board[cell[0]][cell[1]] = tetromino_colour
 
 # --- load tetrominoes --- 
 with open('tetrominoes.json') as jsonfile:
@@ -133,6 +192,12 @@ with open('tetrominoes.json') as jsonfile:
         return tetrominoes.get(type)[rotation]
 
 spawn_tetromino()
+
+bg = pygame.image.load("space.jpg")
+# play_area = pygame.Surface((1920,1080))
+# play_area.fill((255,255,255,1))
+# play_area = pygame.draw.rect(screen, (255,255,255), (50, 50, 50, 50), 1)
+# play_area = pygame.transform.gaussian_blur(play_area, 20)
 
 # -------- Main Program Loop -----------
 while not done:
@@ -155,24 +220,51 @@ while not done:
                 move_down()
  
     # --- Game logic should go here
+
+    # gravity for active block
+    frame_counter += 1
+    if frame_counter % speed == 0:
+        fall()
  
     # --- Screen-clearing code goes here
  
     # Here, we clear the screen to white. Don't put other drawing commands
     # above this, or they will be erased with this command.
- 
-    # If you want a background image, replace this clear with blit'ing the
-    # background image.
-    screen.blit(pygame.image.load("space.jpg"), (0,0))
- 
+
+    screen.blit(bg, (0,0))
+    
+
+    # Draw Title
+    GAME_FONT.render_to(screen, (100, 50), "TETRIS", (255, 255, 255))
+
+
+    # --- background animation ---
+    for star in star_field_slow:
+        star[1] += 1
+        if star[1] > screen_height:
+            star[0] = random.randrange(0, screen_width)
+            star[1] = random.randrange(-20, -5)
+        pygame.draw.circle(screen, DARKGREY, star, 3)
+
+    for star in star_field_medium:
+        star[1] += 4
+        if star[1] > screen_height:
+            star[0] = random.randrange(0, screen_width)
+            star[1] = random.randrange(-20, -5)
+        pygame.draw.circle(screen, LIGHTGREY, star, 2)
+
+    for star in star_field_fast:
+        star[1] += 8
+        if star[1] > screen_height:
+            star[0] = random.randrange(0, screen_width)
+            star[1] = random.randrange(-20, -5)
+        pygame.draw.circle(screen, YELLOW, star, 1)
+
     # --- Drawing code should go here
 
-    frame_counter += 1
     
-    if frame_counter % speed == 0:
-        print(frame_counter)
-        fall()
 
+    # draw grid
     offset_x = offset_mid_x
     offset_y = offset_mid_y
     for row in range(20):
@@ -202,6 +294,3 @@ while not done:
  
 # Close the window and quit.
 pygame.quit()
-
-
-
