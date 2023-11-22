@@ -2,23 +2,21 @@ import pygame
 import json
 import random
 from random import randint
- 
-# Define some colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
 
 frame_counter = 0
 speed = 60
 tetromino_colour = ""
 
-height = 20
-width = 20
+height = 40
+width = 40
 margin = 5
 colour = "white"
 bag = []
 active_position = [[], [], [], []]
+screen_width = 1920
+screen_height = 1080
+offset_mid_x = screen_width/2 - (width*5)
+offset_mid_y = screen_height/2 - (height*10)
 
 # --- build the board model --- #
 board = []
@@ -31,7 +29,7 @@ pygame.init()
 
  
 # Set the width and height of the screen [width, height]
-size = (700, 500)
+size = (screen_width, screen_height)
 screen = pygame.display.set_mode(size)
  
 pygame.display.set_caption("Tetris")
@@ -165,7 +163,7 @@ while not done:
  
     # If you want a background image, replace this clear with blit'ing the
     # background image.
-    screen.fill(BLACK)
+    screen.blit(pygame.image.load("space.jpg"), (0,0))
  
     # --- Drawing code should go here
 
@@ -175,21 +173,23 @@ while not done:
         print(frame_counter)
         fall()
 
-    offset_x = 0
-    offset_y = 0
+    offset_x = offset_mid_x
+    offset_y = offset_mid_y
     for row in range(20):
         offset_y += margin
         for column in range(10):
 
             if(board[row][column] != 0):
                 colour = convert_letter_to_colour(tetromino_colour)
+                filled = 0
             else:
                 colour = "white"
+                filled = 1
 
             offset_x += margin
-            pygame.draw.rect(screen, colour, (offset_x, offset_y, width, width))
+            pygame.draw.rect(screen, colour, (offset_x, offset_y, width, width), filled)
             offset_x += width
-        offset_x = 0
+        offset_x = offset_mid_x
         offset_y += height
 
 
