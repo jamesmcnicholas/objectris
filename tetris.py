@@ -4,6 +4,7 @@ import json
 import random
 from random import randint
 
+# --- Gameplay vars ---
 frame_counter = 0
 speed = 60
 tetromino_colour = ""
@@ -12,6 +13,8 @@ width = 40
 margin = 5
 colour = "white"
 bag = []
+touch_bottom = False
+lock_in_timer = 0
 active_position = [[], [], [], []]
 screen_width = 1920
 screen_height = 1080
@@ -121,6 +124,8 @@ def spawn_tetromino():
         active_position[i].append(tetromino[i][1])
         active_position[i].append(tetromino[i][0]+3)
 
+
+# --- scan for movement ---
 def check_left():
     for i in range(4):
         if active_position[i][1] - 1 < 0:
@@ -132,54 +137,74 @@ def check_right():
             return False
 
 def check_down():
+    global touch_bottom
+    global board
+
+    # --- check for bottom of the board ---
     for i in range(4):
-        if active_position[i][0] + 1 > 19:
+        pos = active_position[i]
+        if pos[0] + 1 > 18:
+            touch_bottom = True
+        else:
+            touch_bottom = False
+        if pos[0] + 1 > 19:
             return False
 
+    # --- check for pieces below this piece ---
+    for j in range(4):
+        pos = active_position[j]
+        # ensure we're not checking this piece's squares
+        if [pos[0]+1,pos[1]] not in active_position:
+            if board[pos[0] + 1][pos[1]] != 0:
+                touch_bottom = True
+                return False
+
+# --- move active block ---
 def move_left():
     global board
     if check_left() == False:
         return
     else:
-        board = [[0 for x in range(10)] for y in range(20)]
+        for cell in active_position:
+            board[cell[0]][cell[1]] = 0
         for i in range(4):
             active_position[i][1] = active_position[i][1] - 1
         for cell in active_position:
             board[cell[0]][cell[1]] = tetromino_colour
         print(active_position)
-    
+
 def move_right():
     global board
     if check_right() == False:
         return
     else:
-        board = [[0 for x in range(10)] for y in range(20)]
+        for cell in active_position:
+            board[cell[0]][cell[1]] = 0
         for i in range(4):
             active_position[i][1] = active_position[i][1] + 1
         for cell in active_position:
             board[cell[0]][cell[1]] = tetromino_colour
-    
 
 def move_down():
     global board
     if check_down() == False:
         return
     else:
-        board = [[0 for x in range(10)] for y in range(20)]
+        for cell in active_position:
+            board[cell[0]][cell[1]] = 0
         for i in range(4):
             active_position[i][0] = active_position[i][0] + 1
         for cell in active_position:
             board[cell[0]][cell[1]] = tetromino_colour
     print(active_position)
 
-
 def fall():
-    global board
     global board
     if check_down() == False:
         return
     else:
-        board = [[0 for x in range(10)] for y in range(20)]
+        for cell in active_position:
+            board[cell[0]][cell[1]] = 0
         for i in range(4):
             active_position[i][0] = active_position[i][0] + 1
         for cell in active_position:
@@ -199,7 +224,7 @@ bg = pygame.image.load("space.jpg")
 # play_area = pygame.draw.rect(screen, (255,255,255), (50, 50, 50, 50), 1)
 # play_area = pygame.transform.gaussian_blur(play_area, 20)
 
-# -------- Main Program Loop -----------
+# -------- Main Game Loop  -----------
 while not done:
     # --- Main event loop
     for event in pygame.event.get():
@@ -221,24 +246,31 @@ while not done:
  
     # --- Game logic should go here
 
+
     # gravity for active block
     frame_counter += 1
     if frame_counter % speed == 0:
         fall()
+    
+    if touch_bottom is True:
+        lock_in_timer += 1
+    
+    if lock_in_timer == 30:
+        active_position = [[], [], [], []]
+        lock_in_timer = 0
+        touch_bottom = False
+        spawn_tetromino()
+
  
-    # --- Screen-clearing code goes here
- 
+    # --- Screen-clearing ---
     # Here, we clear the screen to white. Don't put other drawing commands
     # above this, or they will be erased with this command.
-
     screen.blit(bg, (0,0))
-    
 
     # Draw Title
     GAME_FONT.render_to(screen, (100, 50), "TETRIS", (255, 255, 255))
 
-
-    # --- background animation ---
+    # --- Draw background animation ---
     for star in star_field_slow:
         star[1] += 1
         if star[1] > screen_height:
@@ -260,19 +292,16 @@ while not done:
             star[1] = random.randrange(-20, -5)
         pygame.draw.circle(screen, YELLOW, star, 1)
 
-    # --- Drawing code should go here
-
     
 
-    # draw grid
+    # --- Draw game grid ---
     offset_x = offset_mid_x
     offset_y = offset_mid_y
     for row in range(20):
         offset_y += margin
         for column in range(10):
-
             if(board[row][column] != 0):
-                colour = convert_letter_to_colour(tetromino_colour)
+                colour = convert_letter_to_colour(board[row][column])
                 filled = 0
             else:
                 colour = "white"
@@ -285,7 +314,7 @@ while not done:
         offset_y += height
 
 
-    # --- Go ahead and update the screen with what we've drawn.
+    # --- Update the screen with what we've drawn.
     pygame.display.flip()
  
     # --- Limit to 60 frames per second
