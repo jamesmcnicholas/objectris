@@ -8,6 +8,7 @@ BOARD_HEIGHT = 23
 CELL_HEIGHT = 40
 CELL_WIDTH = 40
 
+
 # --- helper methods ---
 def generate_bag():
     return random.sample(range(0, 7), 7)
@@ -61,13 +62,8 @@ with open('rotations.json') as jsonfile:
         return
 
 
-
 class Board():
-
-
     def __init__(self, screen, offset, pygame):
-        self.board_width = 10
-        self.board_height = 23
         self.board = []
         self.active_position = [[], [], [], []]
         self.speed = 60
@@ -87,10 +83,11 @@ class Board():
         self.has_swapped_piece = False
         self.current_piece_orientation = 0
         self.pygame = pygame
-        self.offset_mid_x = self.screen_width/2 - (CELL_WIDTH*5)
+        self.offset_mid_x = self.screen_width/2 - (CELL_WIDTH*5) + offset
         self.offset_mid_y = self.screen_height/2 - (CELL_HEIGHT*13)
-        self.saved_piece_pane_offset_x = 500
+        self.saved_piece_pane_offset_x = 500 + offset
         self.saved_piece_pane_offset_y = self.offset_mid_y * 8
+        self.SECONDARY_FONT = self.pygame.freetype.Font("RobotoMono-Bold.ttf", 30)
         
 
         # Build the board
@@ -135,7 +132,6 @@ class Board():
         for cell in tetromino:
             self.board[cell[1]+row_offset][cell[0]+3] = self.tetromino_colour
         for i in range(4):
-            print("Updating AP", tetromino)
             self.active_position[i].append(tetromino[i][1]+row_offset)
             self.active_position[i].append(tetromino[i][0]+3)
         self.current_piece_type = letter
@@ -206,7 +202,7 @@ class Board():
 
     def check_death(self):
         if self.board[1] != [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]:
-            pygame.quit()
+            self.pygame.quit()
 
 
     def get_full_lines(self):
@@ -331,18 +327,18 @@ class Board():
 
     def draw_saved(self):
         self.pygame.draw.rect(self.screen, "white", (self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y, 250, 150), 1)
-        # SECONDARY_FONT.render_to(screen, (saved_piece_pane_offset_x + 80, saved_piece_pane_offset_y + 10 ), "SAVED", (255, 255, 255))
+        self.SECONDARY_FONT.render_to(self.screen, (self.saved_piece_pane_offset_x + 80, self.saved_piece_pane_offset_y + 10 ), "SAVED", (255, 255, 255))
         self.draw_piece_image(self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y, self.saved_piece_type)
 
 
     def draw_upcoming(self):
-        self.pygame.draw.rect(self.screen, "white", (1300, self.saved_piece_pane_offset_y, 250, 660), 1)
-        # SECONDARY_FONT.render_to(screen, (1300 + 40, saved_piece_pane_offset_y + 10 ), "UPCOMING", (255, 255, 255))
-        upcoming_y_off = self.saved_piece_pane_offset_y
+        self.pygame.draw.rect(self.screen, "white", (self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y + 235, 250, 660), 1)
+        self.SECONDARY_FONT.render_to(self.screen, (self.saved_piece_pane_offset_x + 40, self.saved_piece_pane_offset_y + 245 ), "UPCOMING", (255, 255, 255))
+        upcoming_y_off = self.saved_piece_pane_offset_y + 235
         for i in range(5):
             if(len(self.bag) < 5):
                 self.bag = self.bag + generate_bag()
-            self.draw_piece_image(1300, upcoming_y_off, convert_to_tetromino_letter(self.bag[i]))
+            self.draw_piece_image(self.saved_piece_pane_offset_x, upcoming_y_off, convert_to_tetromino_letter(self.bag[i]))
             upcoming_y_off += 120
 
 

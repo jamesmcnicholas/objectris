@@ -7,32 +7,26 @@ import time
 import asyncio
 from board import Board, generate_bag, convert_letter_to_colour, convert_to_tetromino_letter
 from starfield import Starfield
+from board_manager import BoardManager
+from settings_manager import SettingsManager
 
 # --- Gameplay vars ---
-frame_counter = 0
-speed = 60
 screen_width = 1920
 screen_height = 1080
 
 # --- start up pygame ---
-
 pygame.init()
+
 pygame.freetype.init()
-# GAME_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 80)
-# SECONDARY_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 30)
+GAME_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 80)
 
-
+pygame.display.set_caption("Tetris")
 
 # Set the width and height of the screen [width, height]
 size = (screen_width, screen_height)
 screen = pygame.display.set_mode(size)
 
-# Generate the board
-board = Board(screen, 0, pygame)
-
-pygame.display.set_caption("Tetris")
-
-# Loop until the user clicks the close button.
+# Loop until the done
 done = False
 
 # Used to manage how fast the screen updates
@@ -41,10 +35,14 @@ clock = pygame.time.Clock()
 bg = pygame.image.load("space.jpg")
 starfield = Starfield(pygame, screen)
 
+# blurrity blur
 # play_area = pygame.Surface((1920,1080))
 # play_area.fill((255,255,255,1))
 # play_area = pygame.draw.rect(screen, (255,255,255), (50, 50, 50, 50), 1)
 # play_area = pygame.transform.gaussian_blur(play_area, 20)
+
+settings_manager = SettingsManager("settings.json")
+board_manager = BoardManager(screen, pygame, settings_manager)
 
 
 async def main():
@@ -55,42 +53,6 @@ async def main():
 # -------- Main Game Loop  -----------
     while not done:
         # --- Main event loop
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                    board.move_left()
-                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                    board.move_right()
-                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                    board.move_down()
-                if event.key == pygame.K_SPACE:
-                    board.slam_down()
-                if event.key == pygame.K_LSHIFT:
-                    board.save_symbol()
-                if event.key == pygame.K_UP:
-                    board.rotate(0)
-                if event.key == pygame.K_RCTRL or event.key == pygame.K_LCTRL:
-                    board.rotate(1)
-
-        # gravity for active block
-        frame_counter += 1
-        if frame_counter % speed == 0:
-            board.fall()
-        
-        if board.touch_bottom is True:
-            board.lock_in_timer += 1
-        else:
-            board.lock_in_timer = 0
-        
-        if board.lock_in_timer == 30:
-            board.lock_in_timer = 0
-            board.touch_bottom = False
-            move_count = 0
-            board.clear_lines(board.get_full_lines())
-            board.check_death()
-            board.spawn_tetromino()
 
 
         # --- Screen-clearing ---
@@ -98,13 +60,10 @@ async def main():
         screen.blit(bg, (0,0))
         starfield.animate()
 
+        board_manager.check_movement()
+
         # Draw Title
-        # GAME_FONT.render_to(screen, (100, 50), "TETRIS", (255, 255, 255))
-
-        board.check_down()
-
-        # -- draw board
-        board.draw()
+        GAME_FONT.render_to(screen, (100, 50), "TETRIS", (255, 255, 255))
 
 
         # --- Update the screen with what we've drawn.
