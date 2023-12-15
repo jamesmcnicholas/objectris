@@ -5,14 +5,16 @@ import random
 from random import randint
 import time
 import asyncio
-from board import Board, generate_bag, convert_letter_to_colour, convert_to_tetromino_letter
+from board import Board
 from starfield import Starfield
 from board_manager import BoardManager
 from settings_manager import SettingsManager
+from network_client import NetworkClient
 
 # --- Gameplay vars ---
 screen_width = 1920
 screen_height = 1080
+multi = True
 
 # --- start up pygame ---
 pygame.init()
@@ -42,18 +44,23 @@ starfield = Starfield(pygame, screen)
 # play_area = pygame.transform.gaussian_blur(play_area, 20)
 
 settings_manager = SettingsManager("settings.json")
-board_manager = BoardManager(screen, pygame, settings_manager)
+board_manager = BoardManager(screen, pygame, settings_manager, multi)
 
 
 async def main():
     global frame_counter
     global touch_bottom
     global done
+    global multi
+
+    n = NetworkClient()
+    b1 = n.getBoard()
 
 # -------- Main Game Loop  -----------
     while not done:
         # --- Main event loop
-
+        if(multi):
+            board_manager.set_p2_board(n.send(board_manager.get_board()))
 
         # --- Screen-clearing ---
         # Here, we clear the screen to white. Don't put other drawing commands above this
@@ -64,7 +71,6 @@ async def main():
 
         # Draw Title
         GAME_FONT.render_to(screen, (100, 50), "TETRIS", (255, 255, 255))
-
 
         # --- Update the screen with what we've drawn.
         pygame.display.flip()

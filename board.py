@@ -1,18 +1,6 @@
 import json
 import random
 
-
-# board constants
-BOARD_WIDTH = 10
-BOARD_HEIGHT = 23
-CELL_HEIGHT = 40
-CELL_WIDTH = 40
-
-
-# --- helper methods ---
-def generate_bag():
-    return random.sample(range(0, 7), 7)
-
 def convert_to_tetromino_letter(number):
     if number == 0:
         return "I"
@@ -29,21 +17,6 @@ def convert_to_tetromino_letter(number):
     if number == 6:
         return "Z"
 
-def convert_letter_to_colour(letter):
-    if letter == "I":
-        return "cyan"
-    if letter == "J":
-        return "blue"
-    if letter == "L":
-        return "orange"
-    if letter == "O":
-        return "yellow"
-    if letter == "S":
-        return "green"
-    if letter == "T":
-        return "purple"
-    if letter == "Z":
-        return "red"
 
 # --- load tetrominoes --- 
 with open('tetrominoes.json') as jsonfile:
@@ -63,7 +36,7 @@ with open('rotations.json') as jsonfile:
 
 
 class Board():
-    def __init__(self, screen, offset, pygame):
+    def __init__(self, board_height, board_width, offset):
         self.board = []
         self.active_position = [[], [], [], []]
         self.speed = 60
@@ -74,26 +47,19 @@ class Board():
         self.touch_bottom = False
         self.lock_in_timer = 0
         self.move_count = 0
-        self.screen = screen
-        self.screen_width = screen.get_width()
-        self.screen_height = screen.get_height()
         self.saved_piece_type = ""
         self.current_piece_type = ""
         self.place_holder = ""
         self.has_swapped_piece = False
         self.current_piece_orientation = 0
-        self.pygame = pygame
-        self.offset_mid_x = self.screen_width/2 - (CELL_WIDTH*5) + offset
-        self.offset_mid_y = self.screen_height/2 - (CELL_HEIGHT*13)
-        self.saved_piece_pane_offset_x = 500 + offset
-        self.saved_piece_pane_offset_y = self.offset_mid_y * 8
-        self.SECONDARY_FONT = self.pygame.freetype.Font("RobotoMono-Bold.ttf", 30)
+        self.offset = offset
+        self.board_height = board_height
+        self.board_width = board_width
         
-
         # Build the board
-        for row in range (BOARD_HEIGHT):
+        for row in range (self.board_height):
             self.board.append([])
-            for column in range(BOARD_WIDTH):
+            for column in range(self.board_width):
                 self.board[row].append(0)
 
         # Get things going
@@ -125,7 +91,7 @@ class Board():
         else:
             self.has_swapped_piece = False
             if self.bag == []:
-                self.bag = generate_bag()
+                self.generate_bag()
             letter = convert_to_tetromino_letter(self.bag.pop(0))
         tetromino = get_tetromino(letter,0)
         self.tetromino_colour = letter
@@ -183,11 +149,11 @@ class Board():
         # --- check for bottom of the board ---
         for i in range(4):
             pos = self.active_position[i]
-            if pos[0] + 1 > BOARD_HEIGHT - 2:
+            if pos[0] + 1 > self.board_height - 2:
                 self.touch_bottom = True
             else:
                 self.touch_bottom = False
-            if pos[0] + 1 > BOARD_HEIGHT - 1:
+            if pos[0] + 1 > self.board_height - 1:
                 return False
 
         # --- check for pieces below this piece ---
@@ -202,12 +168,13 @@ class Board():
 
     def check_death(self):
         if self.board[1] != [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]:
-            self.pygame.quit()
+            print("LOSER!!!!!")
+    #         self.pygame.quit()
 
 
     def get_full_lines(self):
         list_full_lines = []
-        for i in range(BOARD_HEIGHT):
+        for i in range(self.board_height):
             if not 0 in self.board[i]:
                 list_full_lines.append(i)
         return list_full_lines
@@ -218,7 +185,7 @@ class Board():
         # For each full line, starting with the lowest
         for line in full_lines:
             # create an empty buffer
-            buffer = [0] * BOARD_WIDTH
+            buffer = [0] * self.board_width
             # loop through every line starting with the bottom full line, going up
             # e.g. line 17 is full, loop 17,16,15....1,0
             for i in range(line,0,-1):
@@ -227,7 +194,7 @@ class Board():
                 # set this line to the buffer
                 self.board[i] = buffer
             # Clear the top line
-            self.board[0] = [0] * BOARD_WIDTH
+            self.board[0] = [0] * self.board_width
 
 
     # --- move active block ---
@@ -323,66 +290,9 @@ class Board():
                 self.active_position[i][0] = self.active_position[i][0] - old_position[i][1] + new_position[i][1]
             for cell in self.active_position:
                 self.board[cell[0]][cell[1]] = self.tetromino_colour
+    
+    def generate_bag(self):
+        self.bag = self.bag + random.sample(range(0, 7), 7)
 
-
-    def draw_saved(self):
-        self.pygame.draw.rect(self.screen, "white", (self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y, 250, 150), 1)
-        self.SECONDARY_FONT.render_to(self.screen, (self.saved_piece_pane_offset_x + 80, self.saved_piece_pane_offset_y + 10 ), "SAVED", (255, 255, 255))
-        self.draw_piece_image(self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y, self.saved_piece_type)
-
-
-    def draw_upcoming(self):
-        self.pygame.draw.rect(self.screen, "white", (self.saved_piece_pane_offset_x, self.saved_piece_pane_offset_y + 235, 250, 660), 1)
-        self.SECONDARY_FONT.render_to(self.screen, (self.saved_piece_pane_offset_x + 40, self.saved_piece_pane_offset_y + 245 ), "UPCOMING", (255, 255, 255))
-        upcoming_y_off = self.saved_piece_pane_offset_y + 235
-        for i in range(5):
-            if(len(self.bag) < 5):
-                self.bag = self.bag + generate_bag()
-            self.draw_piece_image(self.saved_piece_pane_offset_x, upcoming_y_off, convert_to_tetromino_letter(self.bag[i]))
-            upcoming_y_off += 120
-
-
-    def draw_piece_image(self, pos_x, pos_y, piece):
-        if piece != "":
-            colour = convert_letter_to_colour(piece)
-            coords = get_tetromino(piece, 0)
-            offset_saved_x = 5
-            offset_saved_y = 0
-            if piece == "O":
-                offset_saved_x = -15
-            if piece == "I":
-                offset_saved_x = -10
-                offset_saved_y = -20
-            for coord in coords:
-                self.pygame.draw.rect(self.screen, colour, (pos_x + 50 + (coord[0] * 45) + offset_saved_x, pos_y + 50 + (coord[1] * 45) + offset_saved_y, CELL_WIDTH, CELL_WIDTH), 0)
-
-
-    def draw_board(self):
-        # --- Draw game grid ---
-        offset_x = self.offset_mid_x
-        offset_y = self.offset_mid_y
-        for row in range(BOARD_HEIGHT):
-            offset_y += self.margin
-            for column in range(BOARD_WIDTH):
-                draw = True
-                if(self.board[row][column] != 0):
-                    colour = convert_letter_to_colour(self.board[row][column])
-                    filled = 0
-                else:
-                    if row < 3:
-                        draw = False
-                    else:
-                        colour = "white"
-                        filled = 1
-
-                offset_x += self.margin
-                if draw:
-                    self.pygame.draw.rect(self.screen, colour, (offset_x, offset_y, CELL_WIDTH, CELL_WIDTH), filled)
-                offset_x += CELL_WIDTH
-            offset_x = self.offset_mid_x
-            offset_y += CELL_HEIGHT
-
-    def draw(self):
-        self.draw_board()
-        self.draw_upcoming()
-        self.draw_saved()
+    def set_offset(self, offset):
+        self.offset = offset
