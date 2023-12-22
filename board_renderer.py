@@ -74,10 +74,14 @@ class BoardRenderer():
             offset_x = self.offset_mid_x + board.offset
             offset_y += CELL_HEIGHT
 
+    def draw_name(self, board):
+        self.SECONDARY_FONT.render_to(self.screen, (self.saved_piece_pane_offset_x  + board.offset, self.saved_piece_pane_offset_y - 50 ), board.name, (255, 255, 255))
+
     def draw(self, board):
         self.draw_board(board)
         self.draw_upcoming(board)
         self.draw_saved(board)
+        self.draw_name(board)
 
     def convert_letter_to_colour(self, letter):
         if letter == "I":

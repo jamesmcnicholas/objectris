@@ -18,6 +18,10 @@ class SettingsManager():
         self.settings["keybinds"][action] = key
         self.save_settings()
 
+    def set_name(self, name):
+        self.settings["name"] = name
+        self.save_settings()
+
     def save_settings(self):
         with open(self.settings_file, 'w') as jsonfile:
             json.dump(self.settings, jsonfile, ensure_ascii=True, indent=4)

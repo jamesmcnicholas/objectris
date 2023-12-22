@@ -3,17 +3,28 @@ from board_renderer import BoardRenderer
 import pygame
 
 class BoardManager():
-    def __init__(self, screen, pygame, settings_manager, multi):
+    def __init__(self, screen, pygame, settings_manager, local_multi, online_multi, name):
         self.pygame = pygame
         self.settings_manager = settings_manager
         # TODO dynamic offsets for multiple boards
-        self.board_p1 = Board(23, 10, -400)
-        self.board_p2 = Board(23, 10, 400)
         self.frame_counter = 0
         self.speed = 60
         self.board_renderer = BoardRenderer(screen, pygame)
-        self.multi = multi
+        self.local_multi = local_multi
+        self.online_multi = online_multi
+        self.name = name
+        self.init_boards()
+        
 
+        
+
+
+    def init_boards(self):
+        if(self.online_multi or self.local_multi):
+                self.board_p1 = Board(23, 10, -400, self.name)
+                self.board_p2 = Board(23, 10, 400, "")
+        else:
+            self.board_p1 = Board(23, 10, 0, self.name)
 
     def check_movement(self):
         for event in self.pygame.event.get():
@@ -35,7 +46,7 @@ class BoardManager():
                     if pygame.key.name(event.key) == self.settings_manager.get_keybind("p1_rotate_anticlockwise"):
                         self.board_p1.rotate(1)
                     
-                    if not self.multi:
+                    if self.local_multi:
                         # --- p2 controls ---
                         if pygame.key.name(event.key) == self.settings_manager.get_keybind("p2_left"):
                             self.board_p2.move_left()
@@ -59,7 +70,7 @@ class BoardManager():
         self.frame_counter += 1
         if self.frame_counter % self.speed == 0:
             self.board_p1.fall()
-            if not self.multi:
+            if self.local_multi:
                 self.board_p2.fall()
 
         # -- player 1 checks --
@@ -77,8 +88,8 @@ class BoardManager():
             self.board_p1.check_death()
             self.board_p1.spawn_tetromino()
 
-        if not self.multi:
-            # -- player 2 checks --
+        # -- local player 2 checks --
+        if self.local_multi:
             if self.board_p2.touch_bottom is True:
                 self.board_p2.lock_in_timer += 1
             else:
@@ -96,13 +107,20 @@ class BoardManager():
             self.board_p2.check_down()
 
         self.board_p1.check_down()
-        
 
         self.board_renderer.draw(self.board_p1)
-        self.board_renderer.draw(self.board_p2)
+
+        if self.local_multi or self.online_multi:
+            self.board_renderer.draw(self.board_p2)
 
     def get_board(self):
         return self.board_p1
 
     def set_p2_board(self, board):
         self.board_p2 = board
+
+    def is_dead(self):
+        if not (self.online_multi or self.local_multi):
+            return self.board_p1.is_dead
+        else:
+            return self.board_p1.is_dead or self.board_p2.is_dead 

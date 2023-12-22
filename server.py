@@ -22,6 +22,8 @@ print("Waiting for a connection, Server Started")
 boards = [Board(23, 10, -400), Board(23, 10, 400)]
 
 def threaded_client(conn, player):
+    global currentPlayer
+    
     conn.send(pickle.dumps(boards[player]))
     reply = ""
     while True:
@@ -45,6 +47,7 @@ def threaded_client(conn, player):
             break
 
     print("Lost connection")
+    currentPlayer -= 1
     conn.close()
 
 currentPlayer = 0

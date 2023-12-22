@@ -36,7 +36,7 @@ with open('rotations.json') as jsonfile:
 
 
 class Board():
-    def __init__(self, board_height, board_width, offset):
+    def __init__(self, board_height, board_width, offset, name):
         self.board = []
         self.active_position = [[], [], [], []]
         self.speed = 60
@@ -55,6 +55,8 @@ class Board():
         self.offset = offset
         self.board_height = board_height
         self.board_width = board_width
+        self.is_dead = False
+        self.name = name
         
         # Build the board
         for row in range (self.board_height):
@@ -168,7 +170,7 @@ class Board():
 
     def check_death(self):
         if self.board[1] != [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]:
-            print("LOSER!!!!!")
+            self.is_dead = True
     #         self.pygame.quit()
 
 
