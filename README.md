@@ -2,6 +2,6 @@
 
 # to run ->
 - install python
-- pip install pybag
-- pybag ./tetrisweb
-- go to http://localhost:8000
+- pip install pygame
+- pip install pygame-menu
+- python main.py
