@@ -4,10 +4,10 @@ import json
 import time
 import asyncio
 from board import Board
-from starfield import Starfield
-from board_manager import BoardManager
-from settings_manager import SettingsManager
-from network_client import NetworkClient
+from render.starfield import Starfield
+from managers.board_manager import BoardManager
+from managers.settings_manager import SettingsManager
+from multi.network_client import NetworkClient
 import pygame_menu
 
 # --- Gameplay vars ---
@@ -18,14 +18,21 @@ online_multi = False
 board_manager = None
 name = "Player"
 
+ASSETS = 'assets/'
+
 # --- start up pygame ---
 pygame.init()
 
 pygame.freetype.init()
-GAME_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 80)
-TITLE_FONT = pygame.freetype.Font("RobotoMono-Bold.ttf", 80)
+GAME_FONT = pygame.freetype.Font(ASSETS + "font/RobotoMono-Bold.ttf", 80)
+TITLE_FONT = pygame.freetype.Font(ASSETS + "font/RobotoMono-Bold.ttf", 80)
 
 pygame.display.set_caption("Tetris")
+
+music = ASSETS + 'audio/theme.wav'
+pygame.init()
+pygame.mixer.init()
+pygame.mixer.music.load(music)
 
 # Set the width and height of the screen [width, height]
 size = (screen_width, screen_height)
@@ -37,7 +44,7 @@ done = False
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
 
-bg = pygame.image.load("space.jpg")
+bg = pygame.image.load(ASSETS + "img/space.jpg")
 starfield = Starfield(pygame, screen)
 
 # blurrity blur
@@ -46,8 +53,7 @@ starfield = Starfield(pygame, screen)
 # play_area = pygame.draw.rect(screen, (255,255,255), (50, 50, 50, 50), 1)
 # play_area = pygame.transform.gaussian_blur(play_area, 20)
 
-settings_manager = SettingsManager("settings.json")
-
+settings_manager = SettingsManager("assets/data/settings.json")
 
 TITLE_FONT.render_to(screen, (1000, 500), "TETRIS", (255, 255, 255))
 
@@ -95,17 +101,13 @@ async def main_menu():
     settings_menu.add.button('Volume', start_online_multi)
     settings_menu.add.button('Back to main menu', pygame_menu.events.BACK)
 
-    menu = pygame_menu.Menu('TETRIS', 400, 300,
-                        theme=pygame_menu.themes.THEME_DARK)
+    menu = pygame_menu.Menu('TETRIS', 400, 300, theme=pygame_menu.themes.THEME_DARK)
 
     menu.add.button('Solo', start_solo)
     menu.add.button('2P Local', start_local_multi)
     menu.add.button('Online', start_online_multi)
     menu.add.button('Settings', settings_menu)
     menu.add.button('Quit', pygame_menu.events.EXIT)
-
-
-    
 
     menu.mainloop(screen)
 
@@ -123,6 +125,8 @@ def main():
     if online_multi:
         n = NetworkClient()
         b1 = n.getBoard()
+
+    pygame.mixer.music.play(loops=-1)
 
 # -------- Main Game Loop  -----------
     while not done:

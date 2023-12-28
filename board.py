@@ -19,13 +19,13 @@ def convert_to_tetromino_letter(number):
 
 
 # --- load tetrominoes --- 
-with open('tetrominoes.json') as jsonfile:
+with open('assets/data/tetrominoes.json') as jsonfile:
     tetrominoes = json.load(jsonfile)
     def get_tetromino(type, rotation):
         return tetrominoes.get(type)[rotation]
         
 # --- load rotation checks --- 
-with open('rotations.json') as jsonfile:
+with open('assets/data/rotations.json') as jsonfile:
     rotation_checks = json.load(jsonfile)  
     def get_rotation_checks(tetromino_type, rotation):
         if tetromino_type in "JLSTZ":
@@ -197,6 +197,8 @@ class Board():
                 self.board[i] = buffer
             # Clear the top line
             self.board[0] = [0] * self.board_width
+        # return True if any lines were cleared
+        return len(full_lines) > 0
 
 
     # --- move active block ---
